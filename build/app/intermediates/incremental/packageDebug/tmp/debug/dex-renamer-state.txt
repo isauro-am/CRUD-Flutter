@@ -1,0 +1,4 @@
+#Sun Aug 16 23:33:56 CDT 2020
+base.0=/home/isauro/AndroidStudioProjects/flutter_sqlite_list/build/app/intermediates/dex/debug/mergeDexDebug/out/classes.dex
+path.0=classes.dex
+renamed.0=classes.dex
