@@ -27,7 +27,7 @@ class Home extends StatefulWidget {
 }
 
 class HomeState extends State<Home> {
-  List<Ciudad> _list;
+  List<Notas> _list;
   DatabaseHelper _databaseHelper;
 
   @override
@@ -35,6 +35,8 @@ class HomeState extends State<Home> {
     return Scaffold(
       appBar: AppBar(
         title: Text("CRUD en Flutter"),
+
+        //Agregamos un boton para agregar datos
         actions: <Widget>[
           IconButton(
             icon: Icon(Icons.add),
@@ -49,22 +51,24 @@ class HomeState extends State<Home> {
   }
 
   void insert(BuildContext context) {
-    Ciudad nNombre = new Ciudad();
+    Notas nNombre = new Notas();
     showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: Text("Nuevo"),
+            title: Text("Agregar"),
             content: TextField(
+              //Capturamos la variable conforme se modifica
               onChanged: (value) {
                 nNombre.title = value;
               },
-              decoration: InputDecoration(labelText: "Título:"),
+              decoration: InputDecoration(labelText: "Nota:"),
             ),
             actions: <Widget>[
               FlatButton(
                 child: Text("Cancelar"),
                 onPressed: () {
+                  //cerramos el alert
                   Navigator.of(context).pop();
                 },
               ),
@@ -83,8 +87,8 @@ class HomeState extends State<Home> {
   }
 
   void onDeletedRequest(int index) {
-    Ciudad ciudad = _list[index];
-    _databaseHelper.delete(ciudad).then((value) {
+    Notas notas = _list[index];
+    _databaseHelper.delete(notas).then((value) {
       setState(() {
         _list.removeAt(index);
       });
@@ -92,7 +96,7 @@ class HomeState extends State<Home> {
   }
 
   void onUpdateRequest(int index) {
-    Ciudad nNombre = _list[index];
+    Notas nNombre = _list[index];
     final controller = TextEditingController(text: nNombre.title);
 
     showDialog(
@@ -129,17 +133,20 @@ class HomeState extends State<Home> {
   }
 
   Widget _getBody() {
+    //Creamos el cuerpo de nuestra app
+    //Si la lista es nula mandamos un icono de cargado
     if (_list == null) {
       return CircularProgressIndicator();
     } else if (_list.length == 0) {
+      //Si esta vacio indica que esta vacio
       return Text("Está vacío");
     } else {
       return ListView.builder(
+          // Si tiene datos los muestra
           itemCount: _list.length,
           itemBuilder: (BuildContext context, index) {
-            Ciudad ciudad = _list[index];
-            return CiudadWidget(
-                ciudad, onDeletedRequest, index, onUpdateRequest);
+            Notas notas = _list[index];
+            return NotasWidget(notas, onDeletedRequest, index, onUpdateRequest);
           });
     }
   }
@@ -152,8 +159,10 @@ class HomeState extends State<Home> {
   }
 
   void updateList() {
+    //instanciamos la Base de Datos
     _databaseHelper.getList().then((resultList) {
       setState(() {
+        //Obtenemos la lista y asignamos a nuestra variable
         _list = resultList;
       });
     });
@@ -163,23 +172,25 @@ class HomeState extends State<Home> {
 typedef OnDeleted = void Function(int index);
 typedef OnUpdate = void Function(int index);
 
-class CiudadWidget extends StatelessWidget {
-  final Ciudad cuidad;
+class NotasWidget extends StatelessWidget {
+  final Notas notas;
   final OnDeleted onDeleted;
   final OnUpdate onUpdate;
   final int index;
-  CiudadWidget(this.cuidad, this.onDeleted, this.index, this.onUpdate);
+  NotasWidget(this.notas, this.onDeleted, this.index, this.onUpdate);
 
   @override
   Widget build(BuildContext context) {
+    //Al usar Dismissible Permite eliminar con slide
     return Dismissible(
-      key: Key("${cuidad.id}"),
+      //Parametro Key para borra, se pasa id para saber cual se borra
+      key: Key("${notas.id}"),
       child: Padding(
         padding: EdgeInsets.all(10),
         child: Row(
           children: <Widget>[
             Expanded(
-              child: Text(cuidad.title),
+              child: Text(notas.title),
             ),
             IconButton(
               icon: Icon(
@@ -193,6 +204,7 @@ class CiudadWidget extends StatelessWidget {
           ],
         ),
       ),
+      //Aqui hace la eliminacion, llamando el metodo OnDeleted
       onDismissed: (direction) {
         onDeleted(this.index);
       },

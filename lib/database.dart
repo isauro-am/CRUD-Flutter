@@ -1,83 +1,98 @@
 import 'package:sqflite/sqflite.dart';
 
+//Objeto Padre
+abstract class TableElement {
+  //Clase abstracta con elementos que seran sobre escritos
+  int id; //ID del elemento dentro de la Base de datos
+  final String tableName; //Nombre de la Tabla
+  TableElement(this.id, this.tableName); //Constructor
 
-abstract class TableElement{
-  int id;
-  final String tableName;
-  TableElement(this.id, this.tableName);
-  void createTable(Database db);
-  Map<String, dynamic> toMap();
+  void createTable(Database db); //Creamos la Tabla
+  Map<String, dynamic> toMap(); //Mapa para devolver valores
 }
 
-class Ciudad extends TableElement{
+class Notas extends TableElement {
   static final String TABLE_NAME = "cuidad";
-  String title;
+  String title; //Atributo
 
-  Ciudad({this.title, id}):super(id, TABLE_NAME);
-  factory Ciudad.fromMap(Map<String, dynamic> map){
-    return Ciudad(title: map["title"], id: map["_id"]);
+  Notas({this.title, id})
+      : super(id,
+            TABLE_NAME); //Constructor, Recibe titulo, id y pasa los valores a la tabla
+
+  factory Notas.fromMap(Map<String, dynamic> map) {
+    return Notas(title: map["title"], id: map["_id"]);
   }
 
   @override
   void createTable(Database db) {
-    db.rawUpdate("CREATE TABLE ${TABLE_NAME}(_id integer primary key autoincrement, title varchar(30))");
+    //Se crea la base de datos,
+    db.rawUpdate(
+        "CREATE TABLE ${TABLE_NAME}(_id integer primary key autoincrement, title varchar(30))");
   }
 
   @override
   Map<String, dynamic> toMap() {
-    var map = <String, dynamic>{"title":this.title};
-    if(this.id != null){
+    //mapa de datos par valor id : valor
+    var map = <String, dynamic>{"title": this.title};
+
+    //Al tener un id, se agrega el valor al map
+    if (this.id != null) {
       map["_id"] = id;
     }
     return map;
   }
-
 }
 
-
+//Asignamos el nombre de nuesta base de datos
 final String DB_FILE_NAME = "crub.db";
 
+//Nos ayuda a mantener una comunicacion con la base de datos
 class DatabaseHelper {
+  //Mantiene una instancia de por vida, para ahorrar tiempo
   static final DatabaseHelper _instance = new DatabaseHelper._internal();
-  factory DatabaseHelper() => _instance;
-  DatabaseHelper._internal();
+  factory DatabaseHelper() =>
+      _instance; //metodo que ayuda al constructor a devolver instancias
+  DatabaseHelper._internal(); //Constructor que nosotros definimos
 
+  //atributo de base de datos, aqui estara la conexion a la base de datos
   Database _database;
 
-
+  //se revisa si existe conexion con la Base de datos, si no se conecta
   Future<Database> get db async {
     if (_database != null) {
       return _database;
     }
     _database = await open();
-
     return _database;
   }
 
   Future<Database> open() async {
-    try{
+    try {
+      //Obtenemos el Path de la base de datos
       String databasesPath = await getDatabasesPath();
       String path = "$databasesPath/$DB_FILE_NAME";
-      var db  = await openDatabase(path,
-          version: 1,
+      var db = await openDatabase(path, version: 1,
           onCreate: (Database database, int version) {
-            new Ciudad().createTable(database);
-          });
+        new Notas().createTable(database);
+      });
       return db;
-    }catch(e){
+    } catch (e) {
       print(e.toString());
     }
     return null;
   }
 
-  Future<List<Ciudad>> getList() async{
+  //Obtenemos el listado de la DB
+  Future<List<Notas>> getList() async {
     Database dbClient = await db;
+    //se Declara las columnas que queremos que nos regrese
+    List<Map> maps =
+        await dbClient.query(Notas.TABLE_NAME, columns: ["_id", "title"]);
 
-    List<Map> maps = await dbClient.query(Ciudad.TABLE_NAME,
-        columns: ["_id", "title"]);
-
-    return maps.map((i)=> Ciudad.fromMap(i)).toList();
+    //se regresa la lista de valores
+    return maps.map((i) => Notas.fromMap(i)).toList();
   }
+
   Future<TableElement> insert(TableElement element) async {
     var dbClient = await db;
 
@@ -85,11 +100,13 @@ class DatabaseHelper {
     print("new Id ${element.id}");
     return element;
   }
+
   Future<int> delete(TableElement element) async {
     var dbClient = await db;
-    return await dbClient.delete(element.tableName, where: '_id = ?', whereArgs: [element.id]);
-
+    return await dbClient
+        .delete(element.tableName, where: '_id = ?', whereArgs: [element.id]);
   }
+
   Future<int> update(TableElement element) async {
     var dbClient = await db;
 
